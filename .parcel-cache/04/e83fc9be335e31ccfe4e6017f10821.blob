@@ -1,0 +1,49 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getJSON = getJSON;
+exports.sendJSON = void 0;
+
+var _config = require("./config");
+
+// Functions that we use frequently 
+const timeout = function (s) {
+  return new Promise(function (_, reject) {
+    setTimeout(function () {
+      reject(new Error(`Request took too long! Timeout after ${s} second`));
+    }, s * _config.TIMEOUT_SECOND);
+  });
+};
+
+async function getJSON(url) {
+  try {
+    const response = await Promise.race([fetch(url), timeout(_config.TIMEOUT_SECOND)]);
+    const data = await response.json();
+    if (!response.ok) throw new Error(`${data.message} (${response.status})`);
+    return data;
+  } catch (err) {
+    throw err; // So that we could handdle the error on the model 
+  }
+}
+
+const sendJSON = async function (url, uploadData) {
+  try {
+    const fetchPro = fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(uploadData)
+    });
+    const res = await Promise.race([fetchPro, timeout(_config.TIMEOUT_SECOND)]);
+    const data = await res.json();
+    if (!res.ok) throw new Error(`${data.message} (${res.status})`);
+    return data;
+  } catch (err) {
+    throw err;
+  }
+};
+
+exports.sendJSON = sendJSON;

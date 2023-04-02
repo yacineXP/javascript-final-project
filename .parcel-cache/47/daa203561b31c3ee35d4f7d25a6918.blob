@@ -1,0 +1,163 @@
+"use strict";
+
+require("core-js/modules/web.immediate.js");
+
+var model = _interopRequireWildcard(require("./model.js"));
+
+var _config = require("./config.js");
+
+var _searchView = _interopRequireDefault(require("./views/searchView.js"));
+
+var _recipeView = _interopRequireDefault(require("./views/recipeView.js"));
+
+var _resultView = _interopRequireDefault(require("./views/resultView.js"));
+
+var _paginationView = _interopRequireDefault(require("./views/paginationView.js"));
+
+var _bookmarksView = _interopRequireDefault(require("./views/bookmarksView.js"));
+
+var _addRecipeView = _interopRequireDefault(require("./views/addRecipeView.js"));
+
+var _regeneratorRuntime = require("regenerator-runtime");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
+
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+// Module Importing
+// https://forkify-api.herokuapp.com/v2
+// https://forkify-api.herokuapp.com/v2/rece
+///////////////////////////////////////
+async function controlRecipes() {
+  try {
+    // Getting id
+    const id = window.location.hash.slice(1);
+    if (!id) return; // 0. Spinner
+
+    _recipeView.default.renderSpinner();
+
+    _resultView.default.update(model.getSearchResultPage());
+
+    _bookmarksView.default.update(model.state.bookmarks); // 1. Loading Recipe
+
+
+    await model.loadRecipe(id); // Because it's an aync function that returns a promise
+    // 2. Rendreing Receipe
+
+    _recipeView.default.render(model.state.recipe);
+
+    const html = "";
+  } catch (err) {
+    _recipeView.default.renderError(err);
+  }
+}
+
+async function controlSearchResults() {
+  try {
+    _resultView.default.renderSpinner(); // Get Search Query
+
+
+    const query = _searchView.default.getQuery(); // console.log(query);
+
+
+    if (!query) return; // Load Search Results
+
+    await model.loadSearchResults(query); // Render Result
+
+    console.log(model.state.search.results); // resultView.render(model.state.search.results);
+
+    _resultView.default.render(model.getSearchResultPage()); // Render Initial Pagination button
+    // console.log(model.state.search);
+
+
+    _paginationView.default.render(model.state.search);
+
+    controlPagination(1);
+  } catch (err) {
+    _recipeView.default.renderError(err);
+  }
+}
+
+function controlPagination(goToPage) {
+  // Render New Results
+  _resultView.default.render(model.getSearchResultPage(goToPage)); // Render NEw Pagination
+
+
+  _paginationView.default.render(model.state.search);
+}
+
+function controlServings(newServings) {
+  // Update the recipe servings (in state)
+  model.updateServings(newServings);
+  console.log('Done'); // Update the recipe view
+  // recipeView.render(model.state.recipe)
+
+  _recipeView.default.update(model.state.recipe);
+}
+
+function controlAddBookmark() {
+  // 1) Add / Delete a bookmar
+  if (!model.state.recipe.bookmarked) model.addBookmark(model.state.recipe);else model.deleteBookmark(model.state.recipe); // 2) Update reicpe View  
+
+  _recipeView.default.update(model.state.recipe); // 3) Render bookmarks
+
+
+  _bookmarksView.default.render(model.state.bookmarks);
+}
+
+async function controlAddRecipe(newRecipe) {
+  // console.log(newRecipe);
+  try {
+    // Show Spinenr
+    _addRecipeView.default.renderSpinner(); // 1) Upload the new recipe data
+
+
+    await model.uploadRecipe(newRecipe); // 2) Render recipe
+
+    _recipeView.default.render(model.state.recipe); // 3) Close form window
+
+
+    setTimeout(function () {
+      _addRecipeView.default._toggleWindow();
+    }, _config.MODEL_CLOSE_SEC * 1000); // 4) Display Sucess Msg
+
+    _addRecipeView.default.renderMessage(); // Render bookamrk View
+
+
+    _bookmarksView.default.render(model.state.bookmarksf); // Change URL
+
+
+    window.history.pushState(null, "", `#${model.state.recipe.id}`);
+  } catch (err) {
+    console.log(err);
+
+    _addRecipeView.default.renderError(err.message);
+  }
+
+  model.uploadRecipe(newRecipe);
+}
+
+function controlBookmarks() {
+  _bookmarksView.default.render(model.state.bookmarks);
+}
+
+function init() {
+  _bookmarksView.default.addHandlerRender(controlBookmarks);
+
+  _recipeView.default.addHanlderRender(controlRecipes);
+
+  _recipeView.default.addHandlerUpdateServings(controlServings);
+
+  _recipeView.default.addHandlerAddBookmark(controlAddBookmark);
+
+  _searchView.default.addHandlerSearch(controlSearchResults);
+
+  _paginationView.default.addHandlerClick(controlPagination);
+
+  _addRecipeView.default.addHandlerUpload(controlAddRecipe);
+}
+
+init();
+false; // TIP : Plusieur event avec la même functionb

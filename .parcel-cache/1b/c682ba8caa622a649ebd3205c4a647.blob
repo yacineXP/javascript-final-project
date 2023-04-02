@@ -1,0 +1,49 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _View = _interopRequireDefault(require("./View"));
+
+var _icons = _interopRequireDefault(require("url:../../img/icons.svg"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+class ResultView extends _View.default {
+  _parentElement = document.querySelector(".results");
+  _errorMessage = "No receipes found for your query, Please try another one !";
+  _message = "";
+
+  _generateMarkup() {
+    return this._data.map(this._generateMarkupPreview).join("");
+  }
+
+  _generateMarkupPreview(result) {
+    const id = window.location.hash.slice(1);
+    return `
+      <li class="preview">
+        <a class="preview__link ${result.id === id ? 'preview__link--active' : ''}" href="#${result.id}">
+          <figure class="preview__fig">
+            <img src="${result.image}" alt="${result.title}" />
+          </figure>
+          <div class="preview__data">
+            <h4 class="preview__title">${result.title}</h4>
+            <p class="preview__publisher">${result.publisher}</p>
+            <div class="preview__user-generated">
+              <svg>
+                <use href="${_icons.default}#icon-user"></use>
+              </svg>
+            </div>
+          </div>
+        </a>
+      </li>
+    `;
+  }
+
+}
+
+var _default = new ResultView();
+
+exports.default = _default;
